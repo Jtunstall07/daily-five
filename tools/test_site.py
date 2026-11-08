@@ -233,7 +233,8 @@ def main():
         ix_path = os.path.join(ROOT, "data", "index.json")
         ix_orig = open(ix_path).read()
         vdir = os.path.join(ROOT, "voices"); os.makedirs(vdir, exist_ok=True)
-        shutil.copy(os.path.join(ROOT, "audio", "w1d2.mp4"), os.path.join(vdir, "w1d2.mp4"))
+        test_voice = os.path.join(vdir, "zz_test_voice.mp4")  # never touch the real voice files
+        shutil.copy(os.path.join(ROOT, "audio", "w1d2.mp4"), test_voice)
         src = "/tmp/claude-0/-home-claude/df5e4708-fbf2-56b9-aad9-476dfc2b2f66/scratchpad/build"
         m = json.load(open(os.path.join(src, "audio", "w1d2.json")))
         st = json.load(open(os.path.join(src, "audio", "st_charon.json")))["w1d2"]
@@ -243,7 +244,7 @@ def main():
         for c, s in zip(ex["ch"], sc["ch"]):
             if "art" in s: c["art"] = s["art"]
         open(os.path.join(ROOT, "data", "books", "zz_test.json"), "w").write(json.dumps(ex))
-        open(ix_path, "w").write(json.dumps({"books": ["zz_test"], "voices": {"w1d2": {"audio": "voices/w1d2.mp4", "marks": m["marks"], "dur": m["dur"], "st": st, "voice": "Test voice"}}, "updated": "2026-11-08T12:00:00Z"}))
+        open(ix_path, "w").write(json.dumps({"books": ["zz_test"], "voices": {"w1d2": {"audio": "voices/zz_test_voice.mp4", "marks": m["marks"], "dur": m["dur"], "st": st, "voice": "Test voice"}}, "updated": "2026-11-08T12:00:00Z"}))
         try:
             page.goto(BASE + "#home"); page.reload(); page.wait_for_selector("#hero h2"); page.wait_for_timeout(1500)
             ok("extra book from data/index.json appears on Home", "Test extra book" in page.inner_text("#homeRows"))
@@ -253,13 +254,13 @@ def main():
             ok("extra book opens in the reader", page.locator("#bBody .sent").count() > 10)
             page.goto(BASE + "#book-w1d2"); page.wait_for_selector("#dPlay"); page.wait_for_timeout(500)
             page.click("#dPlay"); v = wait_playing(page)
-            ok("voice override plays voices/<id>.mp4", v and "voices/w1d2.mp4" in v["src"] and v["p"], v)
+            ok("voice override plays voices/<id>.mp4", v and "voices/zz_test_voice.mp4" in v["src"] and v["p"], v)
             page.click("#mPlay")
             ok("no console errors (dynamic content)", not errs, errs[:5])
         finally:
             open(ix_path, "w").write(ix_orig)
             os.remove(os.path.join(ROOT, "data", "books", "zz_test.json"))
-            shutil.rmtree(vdir)
+            os.remove(test_voice)
         errs.clear()
 
         # ---------------- offline: download a book, then go offline ----------------

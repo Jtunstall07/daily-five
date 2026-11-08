@@ -50,22 +50,29 @@ def recognise(path):
         pos = end
     return out
 
-STYLE_START = {"read", "aloud", "natural", "relaxed", "british", "accent"}
-def preamble_spans(rec):
-    """Find the voice reading its own instructions: starts near 'read this aloud', ends at 'adding nothing'."""
-    spans, i = [], 0
-    ws = [w for w, a, b in rec]
-    while i < len(rec):
-        if ws[i] in ("adding", "nothing") and any(x in ("written", "exactly") for x in ws[max(0, i - 6):i]):
-            j = i + 1 if ws[i] == "adding" and i + 1 < len(ws) and ws[i + 1] == "nothing" else i
-            # walk back to the start of the instructions (up to 45 s)
-            k = i
-            while k > 0 and rec[i][1] - rec[k - 1][1] < 45: k -= 1
-            starts = [m for m in range(k, i) if ws[m] in STYLE_START and m + 3 < len(ws) and len(STYLE_START & set(ws[m:m + 8])) >= 2]
-            s = starts[0] if starts else k
-            spans.append((max(0.0, rec[s][1] - 0.15), rec[j][2] + 0.25))
-            i = j + 1
-        else: i += 1
+STYLE_TEXT = ("Read this aloud in a natural, relaxed British English accent, like a thoughtful friend telling a true story over a drink. "
+              "Conversational, warm and human, never like a newsreader or a robot. Normal speaking pace. "
+              "Let the voice rise and fall naturally, lean a little on the surprising details, pause briefly at the end of every sentence, "
+              "a little longer between paragraphs, and about two seconds before each new chapter heading. Read every word exactly as written, adding nothing.")
+STOP = set("a an the and or of on in at to as like over every each before between about never this little".split())
+def preamble_spans(rec, style=STYLE_TEXT):
+    """Find every stretch where the voice read its own style instructions aloud, however much of them it read."""
+    st = words(style); key = set(st) - STOP
+    ws = [w for w, a, b in rec]; spans, i = [], 0
+    while i < len(ws):
+        win = ws[i:i + 25]
+        if ws[i] in key and sum(1 for w in win if w in key) >= 8:
+            sub = ws[i:i + 140]
+            sm = difflib.SequenceMatcher(None, st, sub, autojunk=False)
+            hits = [blk.b + k for blk in sm.get_matching_blocks() for k in range(blk.size)]
+            if len(hits) >= 15:
+                a, b = i + hits[0], i + hits[-1]
+                # the first words are often misheard: walk back to the pause that opens this section (at most 8 s)
+                while a > 0 and rec[a][1] - rec[a - 1][2] < 0.6 and rec[i + hits[0]][1] - rec[a - 1][1] < 8: a -= 1
+                # include the instruction's own last words if the voice got that far
+                while b + 1 < len(ws) and ws[b + 1] in ("adding", "nothing", "written", "exactly", "heading", "headings"): b += 1
+                spans.append((max(0.0, rec[a][1] - 0.15), rec[b][2] + 0.25)); i = b + 1; continue
+        i += 1
     return spans
 
 def cut(src, spans, dst):
@@ -80,7 +87,9 @@ def cut(src, spans, dst):
 
 def gaps(path):
     r = subprocess.run(["ffmpeg", "-i", path, "-af", "silencedetect=noise=-38dB:d=0.15", "-f", "null", "-"], capture_output=True, text=True)
-    return [float(x) for x in re.findall(r"silence_end: ([\d.]+)", r.stderr)]
+    a = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", r.stderr)]
+    b = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", r.stderr)]
+    return list(zip(a, b))  # (start, end) of each pause
 
 def timings(book, rec, total, gap_ends):
     # book tokens with (chapter, sentence) owner; sentence -1 is the spoken heading
@@ -119,11 +128,14 @@ def timings(book, rec, total, gap_ends):
             t0 = start[prev] if prev is not None else 0.0; t1 = start[nxt] if nxt is not None else total
             a0 = first_tok[prev] if prev is not None else 0; a1 = first_tok[nxt] if nxt is not None else len(toks)
             start[u] = t0 + (t1 - t0) * (first_tok[u] - a0) / max(1, a1 - a0)
-    # snap to the end of a pause just before, if one is close
+    # a new sentence nearly always follows a pause: snap to the strongest pause just before the estimate
+    prev = -1.0
     for u in range(len(units)):
-        near = [g for g in gap_ends if start[u] - 0.8 <= g <= start[u] + 0.25]
-        if near: start[u] = max(near) - 0.05
-        start[u] = max(0.0, round(start[u], 2))
+        est = start[u]
+        near = [(g1 - g0) - 0.35 * abs(g1 - est) for g0, g1 in gap_ends if est - 2.0 <= g1 <= est + 0.3 and g1 - g0 >= 0.2 and g1 > prev + 0.5]
+        cand = [g1 for g0, g1 in gap_ends if est - 2.0 <= g1 <= est + 0.3 and g1 - g0 >= 0.2 and g1 > prev + 0.5]
+        if cand: start[u] = cand[max(range(len(near)), key=lambda k: near[k])] - 0.05
+        start[u] = max(0.0, round(start[u], 2)); prev = start[u]
     marks = [0.0] * len(book["ch"]); st = [[] for _ in book["ch"]]
     for (ci, j, _), t in zip(units, start):
         if j < 0: marks[ci] = t
@@ -135,9 +147,17 @@ if __name__ == "__main__":
     bj, audio, outp = sys.argv[1], sys.argv[2], sys.argv[3]
     clean = sys.argv[sys.argv.index("--clean") + 1] if "--clean" in sys.argv else None
     book = json.load(open(bj))
-    rec = recognise(audio); spans = preamble_spans(rec)
+    cache = outp + ".rec.json"
+    if os.path.exists(cache) and json.load(open(cache)).get("src") == os.path.getsize(audio):
+        rec = [tuple(x) for x in json.load(open(cache))["rec"]]
+    else:
+        rec = recognise(audio); json.dump({"src": os.path.getsize(audio), "rec": rec}, open(cache, "w"))
+    spans = preamble_spans(rec)
     if spans and clean:
-        cut(audio, spans, clean); audio = clean; rec = recognise(audio)
+        cut(audio, spans, clean); audio = clean
+        c2 = outp + ".clean.rec.json"
+        if os.path.exists(c2) and json.load(open(c2)).get("src") == os.path.getsize(audio): rec = [tuple(x) for x in json.load(open(c2))["rec"]]
+        else: rec = recognise(audio); json.dump({"src": os.path.getsize(audio), "rec": rec}, open(c2, "w"))
     elif clean and os.path.abspath(clean) != os.path.abspath(audio):
         run("cp", audio, clean); audio = clean
     total = dur(audio)
