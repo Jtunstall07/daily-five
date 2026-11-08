@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- The Daily Five app icon: a story rising out of an open book. Rendered to PNGs by tools/build_site.py. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#f7f0e4"/>
+      <stop offset="1" stop-color="#e8dccb"/>
+    </linearGradient>
+    <clipPath id="tile"><rect id="shape" width="512" height="512" rx="96"/></clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect width="512" height="512" fill="url(#paper)"/>
+    <circle cx="256" cy="200" r="150" fill="#a8782a" opacity=".10"/>
+    <g transform="translate(256 256) scale(1.08) translate(-256 -256)">
+      <!-- the 5 -->
+      <path d="M322 98 H226 L216 182 C236 168 258 163 278 165 C320 169 344 199 344 237 C344 279 312 306 268 306 C236 306 211 293 196 273"
+            fill="none" stroke="#7a2f45" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- the open book -->
+      <path d="M249 352 C208 330 156 323 98 330 V418 C156 411 208 418 249 440 Z" fill="#7a2f45"/>
+      <path d="M263 352 C304 330 356 323 414 330 V418 C356 411 304 418 263 440 Z" fill="#7a2f45"/>
+      <path d="M126 356 C164 352 200 357 228 370 M126 382 C164 378 200 383 228 396" fill="none" stroke="#f3e6cf" stroke-opacity=".42" stroke-width="6" stroke-linecap="round"/>
+      <path d="M386 356 C348 352 312 357 284 370 M386 382 C348 378 312 383 284 396" fill="none" stroke="#f3e6cf" stroke-opacity=".42" stroke-width="6" stroke-linecap="round"/>
+      <path d="M98 432 C156 425 208 432 256 454 C304 432 356 425 414 432" fill="none" stroke="#a8782a" stroke-width="8" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>
