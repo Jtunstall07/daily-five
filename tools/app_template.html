@@ -922,10 +922,43 @@ function shelfOf(b){for(var i=0;i<SHELVES.length;i++)if(SHELVES[i].books.indexOf
 function bookById(id){for(var i=0;i<BOOKS.length;i++)if(BOOKS[i].id===id)return BOOKS[i];return null}
 function booksOn(s){return BOOKS.filter(function(b){return shelfOf(b)===s}).sort(function(a,b){return (b.added||"").localeCompare(a.added||"")||a.id.localeCompare(b.id,undefined,{numeric:true})})}
 
+/* ---------- real book covers from Open Library (free, no key); generated cover stays underneath as the fallback ---------- */
+var COV=(function(){try{return JSON.parse(localStorage.getItem("df_cov")||"{}")||{}}catch(e){return {}}})();
+var COVQ={w1d2:["Influence","Cialdini"],w2d1:["The Art of War","Sun"],w2d4:["Strategy","Liddell Hart"],w2d5:["Boyd","Coram"],w3d1:["The Wealth of Nations","Smith"],w3d2:["Zero to One","Thiel"],w3d3:["Titan","Chernow"],w3d4:["Poor Charlie's Almanack","Munger"],w3d5:["Principles","Dalio"],w4d2:["Never Split the Difference","Voss"],w4d3:["Positioning","Ries"],w4d4:["Story","McKee"],w5d1:["Sapiens","Harari"],w5d3:["Behave","Sapolsky"],w5d4:["The Righteous Mind","Haidt"],w5d5:["The Blank Slate","Pinker"],w6d1:["The History of the Decline and Fall of the Roman Empire","Gibbon"],w6d2:["The Silk Roads","Frankopan"],w6d4:["The Wages of Destruction","Tooze"],w6d5:["Guns, Germs, and Steel","Diamond"],w7d1:["Peak","Ericsson"],w8d2:["Letters from a Stoic","Seneca"],w8d3:["Enchiridion","Epictetus"],w8d4:["Essays","Montaigne"],w8d5:null,w9d1:["The Black Swan","Taleb"],w9d2:["Thinking in Systems","Meadows"],w9d3:["Normal Accidents","Perrow"],w9d4:["Superforecasting","Tetlock"],w9d5:["Fortune's Formula","Poundstone"]};
+function covUrl(b,size){if(!b||b._recap)return "";var c=b.coverId||COV[b.id];return c>0?"https://covers.openlibrary.org/b/id/"+c+"-"+(size||"M")+".jpg":""}
+function covQuery(b){
+  if(Object.prototype.hasOwnProperty.call(COVQ,b.id))return COVQ[b.id];
+  var t=(b.book||"").split(":")[0].trim(),a=(b.author||"").split(/,| and | with | edited by /)[0].trim().split(" ").pop();
+  return t&&a?[t,a]:null;
+}
+function plain(x){return (x||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase()}
+var covBusy=false,covTimer=0;
+function resolveCovers(){
+  if(covBusy||!("fetch" in window)||navigator.onLine===false)return;
+  var todo=BOOKS.filter(function(b){return !b._recap&&!b.coverId&&!(b.id in COV)});
+  if(!todo.length)return;covBusy=true;
+  var JUNK=/summary|study guide|analysis of|workbook|sparknotes|cliffs|key takeaways|insights from|abridged|companion|quicklet|lessons from/i;
+  (function next(){
+    var b=todo.shift();if(!b){covBusy=false;return}
+    var q=covQuery(b);if(!q){COV[b.id]=0;save();return setTimeout(next,50)}
+    var last=plain(q[1]).split(" ").pop();
+    fetch("https://openlibrary.org/search.json?title="+encodeURIComponent(q[0])+"&author="+encodeURIComponent(q[1])+"&fields=cover_i,edition_count,title,author_name&limit=25")
+      .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json()}).then(function(j){
+        var best=null;(j.docs||[]).forEach(function(d){
+          if(!d.cover_i||JUNK.test(d.title||""))return;
+          if(!plain((d.author_name||[]).join(" ")).includes(last))return;
+          if(!best||(d.edition_count||0)>(best.edition_count||0))best=d});
+        COV[b.id]=best?best.cover_i:0;save();
+        if(best){clearTimeout(covTimer);covTimer=setTimeout(function(){if(view!=="read")rerender()},1200)}
+      }).catch(function(){}).then(function(){setTimeout(next,350)});
+  })();
+  function save(){try{localStorage.setItem("df_cov",JSON.stringify(COV))}catch(e){}}
+}
+window.addEventListener("online",function(){setTimeout(resolveCovers,2000)});
 /* ---------- covers & scenes (unchanged drawing code) ---------- */
 function hashN(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return Math.abs(h)}
 function cover(b,w,h){
-  var gid="cg"+b.id+"_"+(++uidN);
+  var gid="cg"+b.id+"_"+(++uidN), cu=covUrl(b,w>80?"L":"M");
   var s=shelfOf(b), n=hashN(b.id), hue=s.hue, h2=(hue+28+(n%30))%360;
   var title=b.book.length>46?b.book.slice(0,44)+"…":b.book;
   var words=title.split(" "), lines=[], cur="";
@@ -942,7 +975,7 @@ function cover(b,w,h){
   else if(motif==="grid")pat='<path d="M20 100h80M20 120h80M20 140h80M40 90v60M60 90v60M80 90v60" stroke="rgba(255,240,220,.2)" stroke-width="3"/>';
   else pat='<path d="M60 90 95 150H25z" fill="none" stroke="rgba(255,240,220,.24)" stroke-width="5"/>';
   var tl=lines.map(function(l,i){return '<text x="12" y="'+(26+i*15)+'" font-family="Young Serif, Georgia, serif" font-size="13" fill="#fff7ea">'+esc(l)+'</text>'}).join("");
-  return '<svg viewBox="0 0 120 160" width="'+w+'" height="'+h+'" aria-hidden="true"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl('+hue+' 42% 30%)"/><stop offset="1" stop-color="hsl('+h2+' 46% 18%)"/></linearGradient></defs><rect width="120" height="160" fill="url(#'+gid+')"/><rect x="0" y="0" width="5" height="160" fill="rgba(0,0,0,.25)"/>'+pat+tl+'<text x="12" y="152" font-family="IBM Plex Sans Condensed, Arial Narrow, sans-serif" font-size="8" letter-spacing="1" fill="rgba(255,240,220,.8)">'+esc(b.author.toUpperCase().slice(0,24))+'</text></svg>';
+  return '<svg viewBox="0 0 120 160" width="'+w+'" height="'+h+'" aria-hidden="true"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl('+hue+' 42% 30%)"/><stop offset="1" stop-color="hsl('+h2+' 46% 18%)"/></linearGradient></defs><rect width="120" height="160" fill="url(#'+gid+')"/><rect x="0" y="0" width="5" height="160" fill="rgba(0,0,0,.25)"/>'+pat+tl+'<text x="12" y="152" font-family="IBM Plex Sans Condensed, Arial Narrow, sans-serif" font-size="8" letter-spacing="1" fill="rgba(255,240,220,.8)">'+esc(b.author.toUpperCase().slice(0,24))+'</text>'+(cu?'<image href="'+esc(cu)+'" x="0" y="0" width="120" height="160" preserveAspectRatio="xMidYMid slice"/><rect x="0" y="0" width="120" height="160" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="1"/>':'')+'</svg>';
 }
 function shelfBg(s){
   var n=hashN(s.id),k="_"+(++uidN);
@@ -1764,7 +1797,7 @@ var player=(function(){
   }
   function msMeta(){
     if(!MS||!P.book)return;var b=P.book,key=b.id+"|"+(hasAudio()?1:0);if(key===msBook)return;msBook=key;
-    try{if(typeof window.MediaMetadata==="function"){var png=coverPng(b._recap||b);MS.metadata=new window.MediaMetadata({title:b._recap?"Recap · "+b.book:b.title,artist:b.author,album:shelfOf(b).name,artwork:png?[{src:png,sizes:"512x512",type:"image/png"}]:[]})}}catch(e){}
+    try{if(typeof window.MediaMetadata==="function"){var png=coverPng(b._recap||b);MS.metadata=new window.MediaMetadata({title:b._recap?"Recap · "+b.book:b.title,artist:b.author,album:shelfOf(b).name,artwork:covUrl(b,"L")?[{src:covUrl(b,"L"),sizes:"500x750",type:"image/jpeg"}].concat(png?[{src:png,sizes:"512x512",type:"image/png"}]:[]):(png?[{src:png,sizes:"512x512",type:"image/png"}]:[])})}}catch(e){}
     msHandlers();msPos();
   }
   function msPos(){if(!MS||!MS.setPositionState||!P.book||!hasAudio())return;var d=dur();if(!d||!isFinite(d))return;try{MS.setPositionState({duration:d,playbackRate:P.rate||1,position:Math.max(0,Math.min(cur(),d))})}catch(e){}}
@@ -1893,7 +1926,7 @@ function loadIndex(){
       if(player.book===b){$("fList").removeAttribute("data-b");player.updMeta()}});
     if(changed&&view!=="read")rerender();
     updBadge();refreshDownloads();
-  }).catch(function(){});
+  }).catch(function(){}).then(function(){setTimeout(resolveCovers,1500)});
 }
 
 /* ---------- offline downloads: a book's text, scenes, narration and recap in the Cache API ---------- */
