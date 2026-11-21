@@ -1,17 +1,28 @@
-"""Daily free-tier re-recorder for The Daily Five. Run: python3 narrate_job.py <books.json> <done_ids.txt> <outdir> <gemini_key>
-books.json: list of book objects in library order (from the app page). done_ids.txt: one id per line already re-recorded.
-Records as many whole books as fit in today's free quota (10 requests a day), alternating voices by library position
-(even index Achernar, odd Aoede). For each finished book writes <outdir>/<id>.mp4 and <outdir>/<id>.json
-{marks, dur, st, voice}. Prints DONE <id> lines and stops cleanly at the daily limit. Never touches billing."""
+"""Free-tier narrator for The Daily Five, recorded in SHORT TAKES so the voice never drifts.
+Run: python3 narrate_job.py <books.json> <done_ids.txt> <outdir> <gemini_key>
+
+The Gemini voices start to rush and slur after a minute or two of continuous speech, so each request is one
+short take of about 1,400 characters (roughly 80 to 90 seconds), split on paragraph boundaries. Each take is
+checked: its speaking speed must be normal and any spoken style instructions are cut out; a bad take is
+recorded once more. Takes are cached in $CACHE (default <outdir>/cache) under names that include the voice and
+model, so a book can be finished over several days with the same model: keep the cache folder between runs.
+One model per book: a book already started with another model is skipped (SKIP_MODEL) so its sound stays even.
+
+Env: MODEL (default gemini-3.8-flash-tts), VOICE (fixed voice; default alternates Achernar/Aoede by position),
+CHUNK (characters per take, default 1400; "auto:N" picks the smallest size that fits the book in N takes),
+MAXREQ (requests allowed this run, default 10), CACHE.
+Prints DONE <id> <voice>, PARTIAL <id> <takes done>/<takes>, SKIP_MODEL <id>, DAILY_LIMIT, FAILED <id> <reason>,
+then USED <n>. For each finished book writes <outdir>/<id>.mp4 and <outdir>/<id>.json
+{marks, dur, st, voice, rec: "short", model}. Never touches billing."""
 import base64, json, os, re, subprocess, sys, time, urllib.request, urllib.error
 
 BOOKS, DONE, OUT, K = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 MODEL = os.environ.get("MODEL", "gemini-3.8-flash-tts")
 URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent"
 TMP = os.path.join(OUT, "tmp"); os.makedirs(TMP, exist_ok=True)
-CHUNK = int(os.environ.get("CHUNK", "6500"))  # characters per request
+CHUNK = os.environ.get("CHUNK", "1400")  # characters per take, or "auto:N"
 STYLE = ("Read this aloud in a natural, relaxed British English accent, like a thoughtful friend telling a true story over a drink. "
-         "Conversational, warm and human, never like a newsreader or a robot. Normal speaking pace. "
+         "Conversational, warm and human, never like a newsreader or a robot. Calm, unhurried, steady speaking pace, exactly the same speed at the end as at the start. "
          "Let the voice rise and fall naturally, lean a little on the surprising details, pause briefly at the end of every sentence, "
          "a little longer between paragraphs, and about two seconds before each new chapter heading. Read every word exactly as written, adding nothing:\n\n")
 ABBR = re.compile(r"\b(Mr|Mrs|Ms|Dr|St|Prof|Gen|Col|Capt|Lt|vs|etc|No|Jr|Sr|Ltd|Co|Inc|[A-Z])\.\s*$")
@@ -52,8 +63,12 @@ def tts(text, voice, path):
 def run(*a): subprocess.run(list(a), check=True)
 def dur(p): return float(subprocess.check_output(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", p]).strip())
 def norm(src, dst):
-    run("ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", "24000", "-af",
-        "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.15,areverse", dst)
+    af = "silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.05,areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.15,areverse"
+    probe = subprocess.run(["ffprobe", "-v", "error", src], capture_output=True)
+    if probe.returncode == 0:
+        run("ffmpeg", "-y", "-loglevel", "error", "-i", src, "-ac", "1", "-ar", "24000", "-af", af, dst)
+    else:  # some models return bare 24 kHz 16-bit PCM with no header
+        run("ffmpeg", "-y", "-loglevel", "error", "-f", "s16le", "-ar", "24000", "-ac", "1", "-i", src, "-ac", "1", "-ar", "24000", "-af", af, dst)
 def gaps(wav):
     r = subprocess.run(["ffmpeg", "-i", wav, "-af", "silencedetect=noise=-38dB:d=0.18", "-f", "null", "-"], capture_output=True, text=True)
     s = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", r.stderr)]
@@ -84,17 +99,6 @@ def align(sents, total, G, hard):
     for k in range(n - 2, 0, -1): j = bk[k][j]; picks.append(j)
     picks.reverse()
     return [0.0] + [G[p][1] - 0.05 for p in picks]
-
-def plan(b):
-    """Group chapters into requests of up to CHUNK characters. Each item: list of chapter indices."""
-    groups, cur, size = [], [], 0
-    for ci, c in enumerate(b["ch"]):
-        n = sum(len(p) for p in c["b"]) + len(c["h"]) + 40
-        if cur and size + n > CHUNK: groups.append(cur); cur, size = [], 0
-        cur.append(ci); size += n
-    if cur: groups.append(cur)
-    return groups
-
 
 # ---- word-level alignment (PocketSphinx, free and offline) ----
 import difflib
@@ -141,7 +145,7 @@ def recognise(path):
     return out
 
 STYLE_TEXT = ("Read this aloud in a natural, relaxed British English accent, like a thoughtful friend telling a true story over a drink. "
-              "Conversational, warm and human, never like a newsreader or a robot. Normal speaking pace. "
+              "Conversational, warm and human, never like a newsreader or a robot. Calm, unhurried, steady speaking pace, exactly the same speed at the end as at the start. "
               "Let the voice rise and fall naturally, lean a little on the surprising details, pause briefly at the end of every sentence, "
               "a little longer between paragraphs, and about two seconds before each new chapter heading. Read every word exactly as written, adding nothing.")
 STOP = set("a an the and or of on in at to as like over every each before between about never this little".split())
@@ -234,55 +238,119 @@ def timings(book, rec, total, gap_ends):
     return marks, st, matched
 
 
+import hashlib, math
+CACHE = os.environ.get("CACHE", os.path.join(OUT, "cache")); os.makedirs(CACHE, exist_ok=True)
+MAXREQ = int(os.environ.get("MAXREQ", "10"))
+GAP_TAKE, GAP_CHAPTER = 0.6, 1.4
+used = 0
+
+def units(b):
+    """Paragraph units in reading order: (chapter, text, starts_chapter). A chapter's heading travels with its first paragraph."""
+    out = []
+    for ci, c in enumerate(b["ch"]):
+        intro = (f"{b['title']}. {b['book']}, by {b['author']}.\n\n" if ci == 0 else "") + c["h"].rstrip(".") + "."
+        for j, p in enumerate(c["b"]):
+            out.append((ci, (intro + "\n\n" + p) if j == 0 else p, j == 0))
+    return out
+
+def takes(b, size):
+    """Pack paragraph units into takes of up to `size` characters (a longer single paragraph is its own take)."""
+    out, cur, n = [], [], 0
+    for u in units(b):
+        if cur and n + len(u[1]) > size: out.append(cur); cur, n = [], 0
+        cur.append(u); n += len(u[1])
+    if cur: out.append(cur)
+    return out
+
+def plan(b):
+    if str(CHUNK).startswith("auto:"):
+        limit = int(CHUNK.split(":")[1]); size = 1400
+        while len(takes(b, size)) > limit and size < 4000: size += 100
+        return takes(b, size)
+    return takes(b, int(CHUNK))
+
+def take_text(t):
+    s = ""
+    for k, (ci, txt, first) in enumerate(t):
+        s += ("\n\n\n" if first and k else ("\n\n" if k else "")) + txt
+    return s
+
+def cut_wav(src, spans, dst):
+    total = dur(src); keep, t0 = [], 0.0
+    for a, b2 in spans:
+        if a > t0: keep.append((t0, a))
+        t0 = b2
+    if t0 < total: keep.append((t0, total))
+    expr = "+".join(f"between(t,{a:.3f},{b2:.3f})" for a, b2 in keep)
+    run("ffmpeg", "-y", "-loglevel", "error", "-i", src, "-af", f"aselect='{expr}',asetpts=N/SR/TB", "-ac", "1", "-ar", "24000", dst)
+
+def record_take(bid, i, text, voice, path):
+    """One request (two if the first take is bad). Returns once a checked take is saved at path."""
+    global used
+    for attempt in range(2):
+        if used >= MAXREQ: return False
+        raw = os.path.join(TMP, f"{bid}_{i}_raw.wav"); tts(text, voice, raw); used += 1
+        wav = os.path.join(TMP, f"{bid}_{i}_n.wav"); norm(raw, wav)
+        spans = preamble_spans(recognise(wav))
+        if spans:
+            fixed = os.path.join(TMP, f"{bid}_{i}_c.wav"); cut_wav(wav, spans, fixed); wav = fixed
+        d = dur(wav); cps = len(text) / max(d, 0.1)
+        ok = 11.0 <= cps <= 19.5
+        print(f"  take {i}: {d:.0f}s, {cps:.1f} chars/s{'' if ok else ' (rejected, retrying)' if attempt == 0 else ' (kept after retry)'}", flush=True)
+        if ok or attempt == 1:
+            run("ffmpeg", "-y", "-loglevel", "error", "-i", wav, "-c:a", "flac", path); return True
+    return False
+
 def book(b, voice):
-    bid = b["id"]; groups = plan(b)
-    marks = [0.0] * len(b["ch"]); st = [None] * len(b["ch"]); parts = []; t = 0.0
-    sil = os.path.join(TMP, "sil.wav")
-    if not os.path.exists(sil): run("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", "1.0", sil)
-    for gi, g in enumerate(groups):
-        text, sents, hard, owner = [], [], [], []
-        for ci in g:
-            c = b["ch"][ci]
-            intro = (f"{b['title']}. {b['book']}, by {b['author']}.\n\n" if ci == 0 else "") + c["h"].rstrip(".") + "."
-            text.append(intro + "\n\n" + "\n\n".join(c["b"]))
-            for k, s in enumerate(split_sentences(intro)): sents.append(s); hard.append(k == 0); owner.append((ci, -1))
-            j = 0
-            for p in c["b"]:
-                for s in split_sentences(p): sents.append(s); hard.append(False); owner.append((ci, j)); j += 1
-        raw = os.path.join(TMP, f"{bid}_{gi}.wav"); tts("\n\n\n".join(text), voice, raw)
-        wav = os.path.join(TMP, f"{bid}_{gi}_n.wav"); norm(raw, wav); d = dur(wav)
-        expect = sum(len(s) for s in sents) / 16.0  # roughly 16 characters a second
-        if d < expect * 0.6: raise RuntimeError(f"audio looks truncated ({d:.0f}s for about {expect:.0f}s of text); lower CHUNK")
-        starts = align(sents, d, gaps(wav), hard)
-        for (ci, j), s0, h in zip(owner, starts, hard):
-            if h: marks[ci] = round(t + s0, 2)
-            if j >= 0:
-                if st[ci] is None: st[ci] = []
-                st[ci].append(round(t + s0, 2))
-        parts += [wav, sil]; t += d + 1.0
-    lst = os.path.join(TMP, bid + ".txt"); open(lst, "w").write("".join(f"file '{p}'\n" for p in parts))
+    bid = b["id"]; ts = plan(b)
+    man_p = os.path.join(CACHE, "models.json")
+    man = json.load(open(man_p)) if os.path.exists(man_p) else {}
+    if man.get(bid, {}).get("model", MODEL) != MODEL or man.get(bid, {}).get("voice", voice) != voice:
+        return "SKIP_MODEL"
+    man[bid] = {"model": MODEL, "voice": voice}; json.dump(man, open(man_p, "w"))
+    paths = []
+    for i, t in enumerate(ts):
+        text = take_text(t)
+        key = hashlib.md5((MODEL + voice + text).encode()).hexdigest()[:10]
+        p = os.path.join(CACHE, f"{bid}_{i:03d}_{key}.flac"); paths.append(p)
+        if os.path.exists(p): continue
+        if not record_take(bid, i, text, voice, p):
+            return f"PARTIAL {sum(os.path.exists(x) for x in paths)}/{len(ts)}"
+    # assemble: short pause between takes, longer before a new chapter
+    lst, sils = [], {}
+    for i, (t, p) in enumerate(zip(ts, paths)):
+        if i:
+            g = GAP_CHAPTER if t[0][2] else GAP_TAKE
+            sp = sils.get(g) or os.path.join(TMP, f"sil{g}.flac")
+            if g not in sils:
+                run("ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", str(g), "-c:a", "flac", sp); sils[g] = sp
+            lst.append(sp)
+        lst.append(p)
+    lf = os.path.join(TMP, bid + ".txt"); open(lf, "w").write("".join(f"file '{os.path.abspath(x)}'\n" for x in lst))
     mp4 = os.path.join(OUT, bid + ".mp4")
-    run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lst, "-c:a", "aac", "-b:a", "56k", "-ac", "1", "-movflags", "+faststart", mp4)
-    # The voice sometimes reads its style instructions aloud. Cut any such stretch, then time every sentence from the words actually heard.
-    rec = recognise(mp4); spans = preamble_spans(rec)
-    if spans:
-        fixed = os.path.join(TMP, bid + "_clean.mp4"); cut(mp4, spans, fixed); os.replace(fixed, mp4); rec = recognise(mp4)
+    run("ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", lf, "-c:a", "aac", "-b:a", "64k", "-ac", "1", "-movflags", "+faststart", mp4)
+    rec = recognise(mp4)
     marks, st, matched = timings(b, rec, dur(mp4), gap_ends(mp4)); marks[0] = 0.0
     if matched < 0.5: raise RuntimeError(f"narration does not match the text ({matched:.0%} of words heard)")
-    json.dump({"marks": marks, "dur": round(dur(mp4), 2), "st": st, "voice": voice, "cut": len(spans), "matched": round(matched, 3)}, open(os.path.join(OUT, bid + ".json"), "w"))
-    return len(groups)
+    json.dump({"marks": marks, "dur": round(dur(mp4), 2), "st": st, "voice": voice, "rec": "short", "model": MODEL,
+               "takes": len(ts), "matched": round(matched, 3)}, open(os.path.join(OUT, bid + ".json"), "w"))
+    for x in paths:
+        try: os.remove(x)
+        except OSError: pass
+    man.pop(bid, None); json.dump(man, open(man_p, "w"))
+    return "DONE"
 
-books = json.load(open(BOOKS)); done = set(x.strip() for x in open(DONE) if x.strip()) if os.path.exists(DONE) else set()
-used = 0
-for i, b in enumerate(books):
-    if b["id"] in done: continue
-    need = len(plan(b))
-    if used + need > 10: break
-    voice = os.environ.get("VOICE") or ("Achernar" if i % 2 == 0 else "Aoede")
-    try:
-        used += book(b, voice); print("DONE", b["id"], voice, flush=True)
-    except DailyLimit as e:
-        print("DAILY_LIMIT", e, flush=True); break
-    except Exception as e:
-        print("FAILED", b["id"], e, flush=True); break
-print("USED", used)
+if __name__ == "__main__":
+    books = json.load(open(BOOKS)); done = set(x.strip() for x in open(DONE) if x.strip()) if os.path.exists(DONE) else set()
+    for i, b in enumerate(books):
+        if b["id"] in done: continue
+        if used >= MAXREQ: break
+        voice = os.environ.get("VOICE") or ("Achernar" if i % 2 == 0 else "Aoede")
+        try:
+            r = book(b, voice)
+        except DailyLimit as e:
+            print("DAILY_LIMIT", e, flush=True); break
+        except Exception as e:
+            print("FAILED", b["id"], e, flush=True); continue
+        print(("DONE " + b["id"] + " " + voice) if r == "DONE" else (r.split()[0] + " " + b["id"] + " " + " ".join(r.split()[1:])).strip(), flush=True)
+    print("USED", used)
