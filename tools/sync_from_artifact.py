@@ -43,6 +43,7 @@ def main():
         dst = os.path.join(ROOT, "audio", bid + ".mp4")
         if os.path.exists(mp4): shutil.copyfile(mp4, dst)
         b["id"] = bid
+        if isinstance(b.get("audioUrl"), str) and b["audioUrl"].startswith("/_blob/"): b["srcAudio"] = b["audioUrl"]
         b["audioUrl"] = f"audio/{bid}.mp4?v={md5(dst)}"
         for k in ("recapUrl", "sceneFile"):
             if isinstance(b.get(k), str) and b[k].startswith("/_blob/"): b.pop(k)
@@ -64,7 +65,8 @@ def main():
         if os.path.exists(mp4): os.makedirs(os.path.dirname(dst), exist_ok=True); shutil.copyfile(mp4, dst)
         if not os.path.exists(dst): skipped.append(vid + " (no voice audio)"); continue
         ix["voices"][vid] = {"audio": f"voices/{vid}.mp4?v={md5(dst)}", "marks": v["marks"], "dur": v.get("dur"),
-                             "st": v.get("st"), "voice": v.get("voice")}
+                             "st": v.get("st"), "voice": v.get("voice"),
+                             "src": v.get("audioUrl"), "rec": v.get("rec")}
         voiced.append(vid)
 
     ix["updated"] = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
