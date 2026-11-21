@@ -8,7 +8,7 @@ recorded once more. Takes are cached in $CACHE (default <outdir>/cache) under na
 model, so a book can be finished over several days with the same model: keep the cache folder between runs.
 One model per book: a book already started with another model is skipped (SKIP_MODEL) so its sound stays even.
 
-Env: MODEL (default gemini-3.8-flash-tts), VOICE (fixed voice; default alternates Achernar/Aoede by position),
+Env: MODEL (default gemini-3.8-flash-tts), VOICE (fixed voice for all; otherwise a book's own "_voice" field, else alternating Achernar/Aoede by position),
 CHUNK (characters per take, default 1400; "auto:N" picks the smallest size that fits the book in N takes),
 MAXREQ (requests allowed this run, default 10), CACHE.
 Prints DONE <id> <voice>, PARTIAL <id> <takes done>/<takes>, SKIP_MODEL <id>, DAILY_LIMIT, FAILED <id> <reason>,
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     for i, b in enumerate(books):
         if b["id"] in done: continue
         if used >= MAXREQ: break
-        voice = os.environ.get("VOICE") or ("Achernar" if i % 2 == 0 else "Aoede")
+        voice = os.environ.get("VOICE") or b.get("_voice") or ("Achernar" if i % 2 == 0 else "Aoede")
         try:
             r = book(b, voice)
         except DailyLimit as e:
