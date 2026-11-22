@@ -1,5 +1,6 @@
 {
  "books": [
+  "d20261122",
   "d20261121",
   "d20261120",
   "d20261119",
@@ -193,7 +194,9 @@
      795.03
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/9191980dea7a06cdcb0dd08e601f9387",
+   "rec": null
   },
   "w1d3": {
    "audio": "voices/w1d3.mp4?v=94a4b92f0b",
@@ -382,7 +385,9 @@
      901.56
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/69244974882a5fbf7094de6b582e9d00",
+   "rec": null
   },
   "w1d1": {
    "audio": "voices/w1d1.mp4?v=f40eb6c0bb",
@@ -573,7 +578,9 @@
      904.76
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/c44dc189ad83b7e30c0a1d76afa7073b",
+   "rec": null
   },
   "w1d4": {
    "audio": "voices/w1d4.mp4?v=7a0a85a686",
@@ -747,7 +754,9 @@
      854.93
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/e5f16cc71750181715dbc68330c43dbf",
+   "rec": null
   },
   "w1d5": {
    "audio": "voices/w1d5.mp4?v=33c0398826",
@@ -922,7 +931,9 @@
      861.04
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/c04a8f3e5ba7e4efb8dc97f0659b278f",
+   "rec": null
   },
   "w2d1": {
    "audio": "voices/w2d1.mp4?v=98765e1576",
@@ -1118,7 +1129,9 @@
      837.9
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/73fa8742a4fb5d7bdc5084980154a8c6",
+   "rec": null
   },
   "w2d2": {
    "audio": "voices/w2d2.mp4?v=985ca8d382",
@@ -1301,7 +1314,9 @@
      898.61
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/405ab046d8ef1d0e8f419e5cfa429406",
+   "rec": null
   },
   "w2d3": {
    "audio": "voices/w2d3.mp4?v=b9da9c7ff2",
@@ -1493,7 +1508,9 @@
      844.86
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/d4619ac222d673e861da68b30ca2f145",
+   "rec": null
   },
   "w2d4": {
    "audio": "voices/w2d4.mp4?v=c736ada4f0",
@@ -1668,7 +1685,9 @@
      898.93
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/71c952759dae0fcc21dae48e4679e17d",
+   "rec": null
   },
   "w2d5": {
    "audio": "voices/w2d5.mp4?v=96af0a8751",
@@ -1841,7 +1860,9 @@
      803.83
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/9f2040dd2c28e1053806cac78fd659c7",
+   "rec": null
   },
   "w3d1": {
    "audio": "voices/w3d1.mp4?v=2b2c0baa5a",
@@ -2049,7 +2070,9 @@
      1056.41
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/aef525678369abe25b68643690602c7f",
+   "rec": null
   },
   "w3d2": {
    "audio": "voices/w3d2.mp4?v=2fa637cd31",
@@ -2252,7 +2275,9 @@
      989.68
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/b9351617f3dde67da84b657b90d058a7",
+   "rec": null
   },
   "w3d3": {
    "audio": "voices/w3d3.mp4?v=b6e1ed8e2a",
@@ -2460,7 +2485,9 @@
      981.03
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/f7431b89d3ca59ec67a6d12baa653e8d",
+   "rec": null
   },
   "w3d4": {
    "audio": "voices/w3d4.mp4?v=29e08afaa1",
@@ -2648,7 +2675,9 @@
      877.94
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/fab0744bbe4a6acb87ebdd5390833579",
+   "rec": null
   },
   "w3d5": {
    "audio": "voices/w3d5.mp4?v=8d3bf0190d",
@@ -2836,7 +2865,9 @@
      835.51
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/8cc226d1b9b171506e5f8209e1fe62e0",
+   "rec": null
   },
   "w4d1": {
    "audio": "voices/w4d1.mp4?v=5f0d3403c2",
@@ -3022,7 +3053,9 @@
      789.6
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/d70daa02b19cc672e1867344301d4416",
+   "rec": null
   },
   "w4d2": {
    "audio": "voices/w4d2.mp4?v=cf9c187c08",
@@ -3207,7 +3240,9 @@
      836.58
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/5a56d7a73173c0654d79dfa5a77e242f",
+   "rec": null
   },
   "w4d3": {
    "audio": "voices/w4d3.mp4?v=985471fd3c",
@@ -3403,7 +3438,9 @@
      804.52
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/d2775cf0eb6037d214dad54fcc0d02ea",
+   "rec": null
   },
   "w4d4": {
    "audio": "voices/w4d4.mp4?v=ad8afcb03e",
@@ -3601,7 +3638,9 @@
      770.92
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/cd35e02e87245cffe91b602279504f89",
+   "rec": null
   },
   "w4d5": {
    "audio": "voices/w4d5.mp4?v=c2e9b2f695",
@@ -3798,7 +3837,9 @@
      840.36
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/9de701422a20d1f245c261c9ceaa3ae6",
+   "rec": null
   },
   "w5d1": {
    "audio": "voices/w5d1.mp4?v=58f9809104",
@@ -3972,7 +4013,9 @@
      884.15
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/39d0c7c350ea976395274723a4665297",
+   "rec": null
   },
   "w5d2": {
    "audio": "voices/w5d2.mp4?v=f96a80bb05",
@@ -4141,7 +4184,9 @@
      851.14
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/e9a6bb14f71cc3332e7633d3471afc61",
+   "rec": null
   },
   "w5d3": {
    "audio": "voices/w5d3.mp4?v=dd2840498d",
@@ -4324,7 +4369,9 @@
      907.01
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/01372ea49abc4baded245ae1519261ed",
+   "rec": null
   },
   "w5d4": {
    "audio": "voices/w5d4.mp4?v=5e80c76db8",
@@ -4498,7 +4545,9 @@
      896.63
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/3cf086e75dbdea61572935b5c4d22d10",
+   "rec": null
   },
   "w5d5": {
    "audio": "voices/w5d5.mp4?v=5bf733acb1",
@@ -4663,7 +4712,9 @@
      858.12
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/ae564213dc1c3aee35856d0306c2fac4",
+   "rec": null
   },
   "w6d1": {
    "audio": "voices/w6d1.mp4?v=42833ab5c1",
@@ -4855,7 +4906,9 @@
      1003.14
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/ed5c3cad8e7dbb3992299796e52a27b2",
+   "rec": null
   },
   "w6d2": {
    "audio": "voices/w6d2.mp4?v=f87eadc9c6",
@@ -5019,7 +5072,9 @@
      932.23
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/5d423d3ce5e57b884bf228979322c891",
+   "rec": null
   },
   "w6d3": {
    "audio": "voices/w6d3.mp4?v=b9c65987e1",
@@ -5180,7 +5235,9 @@
      851.69
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/3028d7ba6acd1dd191eb44b4ef9d4057",
+   "rec": null
   },
   "w6d4": {
    "audio": "voices/w6d4.mp4?v=10f0a3612e",
@@ -5345,7 +5402,9 @@
      984.99
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/e33e674ebbe53a2aa15d7d33e7101df4",
+   "rec": null
   },
   "w6d5": {
    "audio": "voices/w6d5.mp4?v=91556c7326",
@@ -5508,7 +5567,9 @@
      974.78
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/82b01b67517ba9c6eba0d725f90aecb3",
+   "rec": null
   },
   "w7d1": {
    "audio": "voices/w7d1.mp4?v=9b25508118",
@@ -5725,7 +5786,9 @@
      1100.88
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/bb2a78c4d585cc447cd63edfd943c520",
+   "rec": null
   },
   "w7d2": {
    "audio": "voices/w7d2.mp4?v=f994cc4390",
@@ -5913,7 +5976,9 @@
      751.88
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/55e18651d617cf7aa28f9898fb57ac8f",
+   "rec": null
   },
   "w7d3": {
    "audio": "voices/w7d3.mp4?v=e9c444da15",
@@ -6108,7 +6173,9 @@
      802.12
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/16efe42144fe0d703c4e419714f262cb",
+   "rec": null
   },
   "w7d4": {
    "audio": "voices/w7d4.mp4?v=05fc88884e",
@@ -6301,7 +6368,9 @@
      854.34
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/3efc79598bfe26ef5d4ea950173935a6",
+   "rec": null
   },
   "w7d5": {
    "audio": "voices/w7d5.mp4?v=fe70763c4b",
@@ -6507,7 +6576,9 @@
      837.7
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/081d43e2f3fd4cb0fcbe830ad1d17ad6",
+   "rec": null
   },
   "w8d1": {
    "audio": "voices/w8d1.mp4?v=9e3a5b9eba",
@@ -6727,7 +6798,9 @@
      1029.74
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/4e923054632b362db0ea8d842c470cf4",
+   "rec": null
   },
   "w8d2": {
    "audio": "voices/w8d2.mp4?v=3c0f2df31e",
@@ -6934,7 +7007,9 @@
      934.54
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/37631038ca8a5452d2b5ac8edd14bf68",
+   "rec": null
   },
   "w8d3": {
    "audio": "voices/w8d3.mp4?v=94fb12172c",
@@ -7171,7 +7246,9 @@
      901.93
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/4deb9c7131b0124c96ce05e010e1a664",
+   "rec": null
   },
   "w8d4": {
    "audio": "voices/w8d4.mp4?v=bec3a44287",
@@ -7386,7 +7463,9 @@
      1000.42
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/3e5cde09dd6232fbb8c6eeb50887d8a1",
+   "rec": null
   },
   "w8d5": {
    "audio": "voices/w8d5.mp4?v=e6556b4203",
@@ -7606,7 +7685,9 @@
      1019.21
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/344263cb0bd04c9494e04175e381e65e",
+   "rec": null
   },
   "w9d1": {
    "audio": "voices/w9d1.mp4?v=9e233eae01",
@@ -7815,7 +7896,9 @@
      924.64
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/f279a0c8c1d6c71f4e9802752002b1ca",
+   "rec": null
   },
   "w9d2": {
    "audio": "voices/w9d2.mp4?v=b0f955c386",
@@ -8012,7 +8095,9 @@
      947.15
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/a9ddad7d3b8c03c6cc8f53215b73ef8c",
+   "rec": null
   },
   "w9d3": {
    "audio": "voices/w9d3.mp4?v=aba70b168a",
@@ -8216,7 +8301,9 @@
      907.76
     ]
    ],
-   "voice": "Aoede"
+   "voice": "Aoede",
+   "src": "/_blob/a9dc78a887f0af43f521eb7f02917e19",
+   "rec": null
   },
   "w9d4": {
    "audio": "voices/w9d4.mp4?v=009207d072",
@@ -8401,8 +8488,10 @@
      919.4
     ]
    ],
-   "voice": "Achernar"
+   "voice": "Achernar",
+   "src": "/_blob/d2a4f8c1e2b3572b4b949940d23556ef",
+   "rec": null
   }
  },
- "updated": "2026-11-21T09:43:55Z"
+ "updated": "2026-11-22T09:42:12Z"
 }
