@@ -19,6 +19,6 @@ elif [ "$cmd" = push ]; then
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_01M3Z9EXxWEE7teD9H1GGRvN"
-  for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+  for i in 1 2 3; do git pull -q --rebase --autostash origin main && git push -q origin HEAD:main && break; sleep 5; done
   echo "saved $(ls takes | grep -c flac || true) takes"
 fi
