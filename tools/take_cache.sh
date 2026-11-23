@@ -1,26 +1,24 @@
 #!/bin/sh
-# Keep unfinished narration takes between scheduled runs, on this repository's "wip" branch (never on main).
+# Keep unfinished narration takes between scheduled runs, in this repository's takes/ folder on main.
 # Run from inside a clone of this repository:
 #   sh tools/take_cache.sh pull DIR   -> DIR/cache holds the saved takes (empty if none yet)
-#   sh tools/take_cache.sh push DIR   -> saves DIR/cache to the wip branch as one fresh commit, so it stays small
+#   sh tools/take_cache.sh push DIR   -> saves DIR/cache into takes/, commits and pushes to main
 set -e
-cmd=$1; dir=$(mkdir -p "$2" && cd "$2" && pwd); repo=$(git rev-parse --show-toplevel)
+cmd=$1; mkdir -p "$2"; dir=$(cd "$2" && pwd); repo=$(git rev-parse --show-toplevel)
 G="git -c user.name=Claude -c user.email=noreply@anthropic.com"
 if [ "$cmd" = pull ]; then
+  git -C "$repo" pull -q --rebase origin main || true
   rm -rf "$dir/cache"; mkdir -p "$dir/cache"
-  if git -C "$repo" fetch -q origin wip 2>/dev/null; then
-    git -C "$repo" archive FETCH_HEAD cache | tar -x -C "$dir" || true
-  fi
+  [ -d "$repo/takes" ] && cp -r "$repo/takes/." "$dir/cache/"
   echo "takes in cache: $(ls "$dir/cache" | grep -c flac || true)"
 elif [ "$cmd" = push ]; then
-  wt="$dir/.wip_worktree"; rm -rf "$wt"
-  git -C "$repo" worktree add -q --detach "$wt"
-  cd "$wt"; git checkout -q --orphan wip_tmp; git rm -rqf --cached . >/dev/null 2>&1 || true
-  find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-  cp -r "$dir/cache" cache; touch cache/.keep; git add cache
-  $G commit -qm "Unfinished narration takes (kept between runs)"
-  git push -q -f origin HEAD:wip
-  n=$(ls cache | grep -c flac || true)
-  cd "$repo"; git worktree remove --force "$wt"; git branch -D -q wip_tmp 2>/dev/null || true
-  echo "saved $n takes to the wip branch"
+  rm -rf "$repo/takes"; mkdir -p "$repo/takes"; cp -r "$dir/cache/." "$repo/takes/"; touch "$repo/takes/.keep"
+  cd "$repo"; git add -A takes
+  if git diff --cached --quiet; then echo "takes unchanged"; exit 0; fi
+  $G commit -qm "Keep unfinished narration takes between runs
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01M3Z9EXxWEE7teD9H1GGRvN"
+  for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+  echo "saved $(ls takes | grep -c flac || true) takes"
 fi
