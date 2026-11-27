@@ -1,1 +1,1 @@
-{"w1d1": {"model": "gemini-3.8-flash-tts", "voice": "Achernar"}, "w1d2": {"model": "gemini-3.8-flash-lite-tts", "voice": "Aoede"}, "w1d3": {"model": "gemini-2.5-flash-preview-tts", "voice": "Achernar"}}
+{"w1d1": {"model": "gemini-3.8-flash-tts", "voice": "Achernar"}, "w1d3": {"model": "gemini-2.5-flash-preview-tts", "voice": "Achernar"}}
